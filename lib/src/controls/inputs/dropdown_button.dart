@@ -16,6 +16,29 @@ typedef DropDownButtonBuilder = Widget Function(
 ///
 /// ![DropDownButton Showcase](https://docs.microsoft.com/en-us/windows/apps/design/controls/images/drop-down-button-align.png)
 ///
+/// ## Usage
+///
+/// ```dart
+/// DropDownButton(
+///   title: const Text('Select an option'),
+///   items: [
+///     MenuFlyoutItem(
+///       text: const Text('Option 1'),
+///       onPressed: () { /* Handle option 1 */ },
+///     ),
+///     MenuFlyoutSubItem(
+///       text: const Text('Submenu'),
+///       items: (context) => [
+///         MenuFlyoutItem(
+///           text: const Text('Suboption 1'),
+///           onPressed: () { /* Handle suboption 1 */ },
+///         ),
+///       ],
+///     ),
+///   ],
+/// )
+/// ```
+///
 /// See also:
 ///
 ///   * [Flyout], a light dismiss container that can show arbitrary UI as its
@@ -42,6 +65,7 @@ class DropDownButton extends StatefulWidget {
     this.onOpen,
     this.onClose,
     this.transitionBuilder = _defaultTransitionBuilder,
+    this.style,
   }) : assert(items.length > 0, 'You must provide at least one item');
 
   /// A builder for the button. If null, a [Button] with [leading], [title] and
@@ -118,7 +142,15 @@ class DropDownButton extends StatefulWidget {
   /// Called when the flyout is closed
   final VoidCallback? onClose;
 
+  /// The transition animation builder.
+  ///
+  /// See also:
+  ///
+  ///  * [FlyoutTransitionBuilder], which is the signature of this property
   final FlyoutTransitionBuilder transitionBuilder;
+
+  /// Customizes this button's appearance.
+  final ButtonStyle? style;
 
   @override
   State<DropDownButton> createState() => DropDownButtonState();
@@ -240,7 +272,6 @@ class DropDownButtonState extends State<DropDownButton> {
     assert(debugCheckHasDirectionality(context));
 
     final theme = FluentTheme.of(context);
-
     return FlyoutTarget(
       controller: _flyoutController,
       child: Builder(builder: (context) {
@@ -255,6 +286,7 @@ class DropDownButtonState extends State<DropDownButton> {
           onPressed: widget.disabled ? null : open,
           autofocus: widget.autofocus,
           focusNode: widget.focusNode,
+          style: widget.style,
           child: Builder(builder: (context) {
             final state = HoverButton.of(context).states;
 
@@ -271,16 +303,16 @@ class DropDownButtonState extends State<DropDownButton> {
                       data: IconThemeData(
                         color: state.isDisabled
                             ? theme.resources.textFillColorDisabled
-                            : state.isPressing
+                            : state.isPressed
                                 ? theme.resources.textFillColorTertiary
-                                : state.isHovering
+                                : state.isHovered
                                     ? theme.resources.textFillColorSecondary
                                     : theme.resources.textFillColorPrimary,
                       ),
                       child: AnimatedSlide(
                         duration: theme.fastAnimationDuration,
                         curve: Curves.easeInCirc,
-                        offset: state.isPressing
+                        offset: state.isPressed
                             ? const Offset(0, 0.1)
                             : Offset.zero,
                         child: widget.trailing!,
@@ -319,11 +351,9 @@ class DropDownButtonState extends State<DropDownButton> {
     bool dismissOnPointerMoveAway = false,
   }) async {
     if (_flyoutController.isOpen) return;
-
     widget.onOpen?.call();
     await _flyoutController.showFlyout(
       barrierColor: Colors.transparent,
-      placementMode: FlyoutPlacementMode.auto,
       autoModeConfiguration: FlyoutAutoConfiguration(
         preferredMode: widget.placement,
       ),
@@ -336,21 +366,22 @@ class DropDownButtonState extends State<DropDownButton> {
         return MenuFlyout(
           color: widget.menuColor,
           shape: widget.menuShape,
-          items:
-              widget.items.map((item) => transformItem(item, context)).toList(),
+          items: widget.items
+              .map((item) => _transformItem(item, context))
+              .toList(),
         );
       },
     );
     widget.onClose?.call();
   }
 
-  MenuFlyoutItemBase transformItem(
+  MenuFlyoutItemBase _transformItem(
     MenuFlyoutItemBase item,
     BuildContext context,
   ) {
     if (item is MenuFlyoutSubItem) {
       return _createSubMenuItem(item);
-    } else if (widget.closeAfterClick && item is MenuFlyoutItem) {
+    } else if (item is MenuFlyoutItem) {
       return _createMenuItem(item, context);
     } else {
       return item;
@@ -361,9 +392,9 @@ class DropDownButtonState extends State<DropDownButton> {
     return MenuFlyoutSubItem(
       key: item.key,
       text: item.text,
-      items: (context) => item.items
-          .call(context)
-          .map((item) => transformItem(item, context))
+      items: (context) => item
+          .items(context)
+          .map((item) => _transformItem(item, context))
           .toList(),
       leading: item.leading,
       trailing: item.trailing,
@@ -374,10 +405,8 @@ class DropDownButtonState extends State<DropDownButton> {
 
   MenuFlyoutItem _createMenuItem(MenuFlyoutItem item, BuildContext context) {
     return MenuFlyoutItem(
-      onPressed: () {
-        Navigator.of(context).pop();
-        item.onPressed?.call();
-      },
+      onPressed: item.onPressed,
+      closeAfterClick: widget.closeAfterClick,
       key: item.key,
       leading: item.leading,
       text: item.text,

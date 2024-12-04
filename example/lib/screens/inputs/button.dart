@@ -44,7 +44,7 @@ class _ButtonPageState extends State<ButtonPage> with PageMixin {
           return IconButton(
             autofocus: splitButtonColor == color,
             style: ButtonStyle(
-              padding: ButtonState.all(
+              padding: WidgetStatePropertyAll(
                 EdgeInsets.all(4.0),
               ),
             ),
@@ -270,7 +270,7 @@ ToggleButton(
   items: [
     MenuFlyoutItem(text: const Text('Send'), onPressed: () {}),
     MenuFlyoutSeparator(),
-    MenuFlyoutItem(text: const Text('Reply'), onPressed: () {}),
+    MenuFlyoutItem(text: const Text('Reply'), onPressed: null),
     MenuFlyoutItem(text: const Text('Reply all'), onPressed: () {}),
   ],
 )''',
@@ -280,7 +280,7 @@ ToggleButton(
               items: [
                 MenuFlyoutItem(text: const Text('Send'), onPressed: () {}),
                 MenuFlyoutSeparator(),
-                MenuFlyoutItem(text: const Text('Reply'), onPressed: () {}),
+                MenuFlyoutItem(text: const Text('Reply'), onPressed: null),
                 MenuFlyoutItem(text: const Text('Reply all'), onPressed: () {}),
               ],
             ),
@@ -343,7 +343,7 @@ SplitButton(
         return Button(
           autofocus: splitButtonColor == color,
           style: ButtonStyle(
-            padding: ButtonState.all(
+            padding: WidgetStatePropertyAll(
               EdgeInsets.all(4.0),
             ),
           ),

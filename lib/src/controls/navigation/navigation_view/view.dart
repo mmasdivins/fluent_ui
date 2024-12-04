@@ -153,9 +153,9 @@ class NavigationView extends StatefulWidget {
   /// Get useful info about the current navigation view.
   ///
   /// As a normal user, you will rarely need this information.
-  static _InheritedNavigationView dataOf(BuildContext context) {
+  static InheritedNavigationView dataOf(BuildContext context) {
     return context
-        .dependOnInheritedWidgetOfExactType<_InheritedNavigationView>()!;
+        .dependOnInheritedWidgetOfExactType<InheritedNavigationView>()!;
   }
 
   @override
@@ -792,7 +792,7 @@ class NavigationViewState extends State<NavigationView> {
 
       return Mica(
         backgroundColor: theme.backgroundColor,
-        child: _InheritedNavigationView(
+        child: InheritedNavigationView(
           displayMode: _compactOverlayOpen ? PaneDisplayMode.open : displayMode,
           minimalPaneOpen: minimalPaneOpen,
           pane: widget.pane,
@@ -861,7 +861,14 @@ class NavigationAppBar with Diagnosticable {
   final double height;
 
   /// The background color of this app bar.
+  ///
+  /// If this is provided, [decoration] must be null.
   final Color? backgroundColor;
+
+  /// The decoration of this app bar.
+  ///
+  /// If this is provided, [backgroundColor] must be null.
+  final Decoration? decoration;
 
   /// Creates a fluent-styled app bar.
   const NavigationAppBar({
@@ -872,7 +879,13 @@ class NavigationAppBar with Diagnosticable {
     this.automaticallyImplyLeading = true,
     this.height = _kDefaultAppBarHeight,
     this.backgroundColor,
-  });
+    this.decoration,
+  }) : assert(
+          (backgroundColor == null && decoration == null) ||
+              (backgroundColor != null && decoration == null) ||
+              (backgroundColor == null && decoration != null),
+          'Only one of backgroundColor or decoration can be provided',
+        );
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -885,6 +898,7 @@ class NavigationAppBar with Diagnosticable {
         defaultValue: true,
       ))
       ..add(ColorProperty('backgroundColor', backgroundColor))
+      ..add(DiagnosticsProperty<Decoration>('decoration', decoration))
       ..add(DoubleProperty(
         'height',
         height,
@@ -907,7 +921,7 @@ class NavigationAppBar with Diagnosticable {
         final onPressed = canPop ? () => Navigator.maybePop(context) : null;
         widget = NavigationPaneTheme(
           data: NavigationPaneTheme.of(context).merge(NavigationPaneThemeData(
-            unselectedIconColor: ButtonState.resolveWith((states) {
+            unselectedIconColor: WidgetStateProperty.resolveWith((states) {
               if (states.isDisabled) {
                 return ButtonThemeData.buttonColor(context, states);
               }
@@ -933,7 +947,10 @@ class NavigationAppBar with Diagnosticable {
       } else {
         return const SizedBox.shrink();
       }
-      widget = SizedBox(width: kCompactNavigationPaneWidth, child: widget);
+      widget = ConstrainedBox(
+          constraints:
+              const BoxConstraints(minWidth: kCompactNavigationPaneWidth),
+          child: widget);
       return widget;
     });
   }
@@ -962,9 +979,8 @@ class _NavigationAppBar extends StatelessWidget {
     assert(debugCheckHasMediaQuery(context));
     assert(debugCheckHasFluentLocalizations(context));
 
-    final displayMode =
-        _InheritedNavigationView.maybeOf(context)?.displayMode ??
-            PaneDisplayMode.top;
+    final displayMode = InheritedNavigationView.maybeOf(context)?.displayMode ??
+        PaneDisplayMode.top;
     final leading = appBar._buildLeading(displayMode != PaneDisplayMode.top);
     final title = () {
       if (appBar.title != null) {
@@ -1033,6 +1049,7 @@ class _NavigationAppBar extends StatelessWidget {
 
     return Container(
       color: appBar.backgroundColor,
+      decoration: appBar.decoration,
       height: appBar.finalHeight(context),
       padding: EdgeInsetsDirectional.only(top: topPadding),
       child: result,

@@ -29,7 +29,7 @@ TextStyle? kPickerPopupTextStyle(BuildContext context, bool isSelected) {
 
 Decoration kPickerDecorationBuilder(
   BuildContext context,
-  Set<ButtonStates> states,
+  Set<WidgetState> states,
 ) {
   assert(debugCheckHasFluentTheme(context));
   final theme = FluentTheme.of(context);
@@ -43,9 +43,11 @@ Decoration kPickerDecorationBuilder(
   );
 }
 
-// ignore: non_constant_identifier_names
-Widget PickerHighlightTile() {
-  return Builder(builder: (context) {
+class PickerHighlightTile extends StatelessWidget {
+  const PickerHighlightTile({super.key});
+
+  @override
+  Widget build(BuildContext context) {
     assert(debugCheckHasFluentTheme(context));
     final theme = FluentTheme.of(context);
     final highlightTileColor = theme.accentColor.defaultBrushFor(
@@ -63,11 +65,11 @@ Widget PickerHighlightTile() {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(4.0),
           ),
-          tileColor: ButtonState.all(highlightTileColor),
+          tileColor: WidgetStatePropertyAll(highlightTileColor),
         ),
       ),
     );
-  });
+  }
 }
 
 /// A widget used by [TimePicker] and [DateTime] to accept or deny the changes
@@ -96,14 +98,14 @@ class YesNoPickerControl extends StatelessWidget {
     assert(debugCheckHasFluentTheme(context));
 
     final buttonStyle = ButtonStyle(
-      elevation: ButtonState.all(0.0),
-      backgroundColor: ButtonState.resolveWith(
+      elevation: const WidgetStatePropertyAll(0.0),
+      backgroundColor: WidgetStateProperty.resolveWith(
         (states) => ButtonThemeData.uncheckedInputColor(
           FluentTheme.of(context),
           states,
         ),
       ),
-      shape: ButtonState.all(const RoundedRectangleBorder()),
+      shape: const WidgetStatePropertyAll(RoundedRectangleBorder()),
     );
 
     return FocusTheme(
@@ -195,20 +197,20 @@ class PickerNavigatorIndicator extends StatelessWidget {
       forceEnabled: true,
       hitTestBehavior: HitTestBehavior.translucent,
       builder: (context, states) {
-        final show = states.isHovering || states.isPressing || states.isFocused;
+        final show = states.isHovered || states.isPressed || states.isFocused;
         return FocusBorder(
           focused: states.isFocused,
           child: ButtonTheme.merge(
             data: ButtonThemeData.all(ButtonStyle(
-              padding: ButtonState.all(const EdgeInsets.symmetric(
+              padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(
                 vertical: 10.0,
               )),
               backgroundColor:
-                  ButtonState.all(FluentTheme.of(context).menuColor),
-              shape: ButtonState.all(const RoundedRectangleBorder()),
-              elevation: ButtonState.all(0.0),
-              iconSize: ButtonState.resolveWith((states) {
-                if (states.isPressing) {
+                  WidgetStatePropertyAll(FluentTheme.of(context).menuColor),
+              shape: const WidgetStatePropertyAll(RoundedRectangleBorder()),
+              elevation: const WidgetStatePropertyAll(0.0),
+              iconSize: WidgetStateProperty.resolveWith((states) {
+                if (states.isPressed) {
                   return 8.0;
                 } else {
                   return 10.0;
@@ -318,10 +320,10 @@ class Picker extends StatefulWidget {
   final double pickerHeight;
 
   @override
-  State<Picker> createState() => _PickerState();
+  State<Picker> createState() => PickerState();
 }
 
-class _PickerState extends State<Picker> {
+class PickerState extends State<Picker> {
   late final GlobalKey _childKey = GlobalKey(debugLabel: '${widget.child} key');
 
   Future<void> open() {

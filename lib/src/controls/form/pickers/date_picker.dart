@@ -169,7 +169,7 @@ class DatePicker extends StatefulWidget {
   final List<int>? fieldFlex;
 
   @override
-  State<DatePicker> createState() => _DatePickerState();
+  State<DatePicker> createState() => DatePickerState();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -210,7 +210,7 @@ class DatePicker extends StatefulWidget {
   }
 }
 
-class _DatePickerState extends State<DatePicker> {
+class DatePickerState extends State<DatePicker> {
   late DateTime date;
 
   late FixedExtentScrollController _monthController;
@@ -225,6 +225,8 @@ class _DatePickerState extends State<DatePicker> {
       return startYear + index;
     }).firstWhere((v) => v == date.year, orElse: () => 0);
   }
+
+  final _pickerKey = GlobalKey<PickerState>();
 
   @override
   void initState() {
@@ -262,15 +264,21 @@ class _DatePickerState extends State<DatePicker> {
   void didUpdateWidget(DatePicker oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.selected != date) {
-      date = widget.selected ?? DateTime.now();
-      _monthController.jumpToItem(date.month - 1);
-      _dayController.jumpToItem(date.day - 1);
-      _yearController.jumpToItem(currentYear - startYear - 1);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        date = widget.selected ?? DateTime.now();
+        _monthController.jumpToItem(date.month - 1);
+        _dayController.jumpToItem(date.day - 1);
+        _yearController.jumpToItem(currentYear - startYear - 1);
+      });
     }
   }
 
   void handleDateChanged(DateTime newDate) {
     if (mounted) setState(() => date = newDate);
+  }
+
+  void open() async {
+    await _pickerKey.currentState?.open();
   }
 
   @override
@@ -299,6 +307,7 @@ class _DatePickerState extends State<DatePicker> {
     );
 
     Widget picker = Picker(
+      key: _pickerKey,
       pickerContent: (context) {
         return _DatePickerContentPopUp(
           date: date,
@@ -332,7 +341,7 @@ class _DatePickerState extends State<DatePicker> {
           await open();
         },
         builder: (context, states) {
-          if (states.isDisabled) states = <ButtonStates>{};
+          if (states.isDisabled) states = <WidgetState>{};
           const divider = Divider(
             direction: Axis.vertical,
             style: DividerThemeData(
@@ -481,8 +490,8 @@ class __DatePickerContentPopUpState extends State<_DatePickerContentPopUp> {
     year ??= DateTime.now().year;
     month ??= DateTime.now().month;
     return DateTimeRange(
-      start: DateTime(year, month),
-      end: DateTime(year, month + 1),
+      start: DateTime.utc(year, month),
+      end: DateTime.utc(year, month + 1),
     ).duration.inDays;
   }
 
@@ -767,7 +776,7 @@ class __DatePickerContentPopUpState extends State<_DatePickerContentPopUp> {
     return Column(children: [
       Expanded(
         child: Stack(children: [
-          PickerHighlightTile(),
+          const PickerHighlightTile(),
           Row(mainAxisSize: MainAxisSize.min, children: [
             ...fieldMap.elementAt(0) ?? [],
             if (fieldMap.elementAt(1) != null) ...[
@@ -789,12 +798,12 @@ class __DatePickerContentPopUpState extends State<_DatePickerContentPopUp> {
       ),
       YesNoPickerControl(
         onChanged: () {
-          widget.onChanged(localDate);
           Navigator.pop(context);
+          widget.onChanged(localDate);
         },
         onCancel: () {
-          widget.onCancel();
           Navigator.pop(context);
+          widget.onCancel();
         },
       ),
     ]);
